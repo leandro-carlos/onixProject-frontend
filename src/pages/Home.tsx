@@ -5,13 +5,45 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import {moderateScale} from 'react-native-size-matters';
 
 import ImageLogo from '../../assets/imagens/Group4.svg';
+import api from '../service/api';
 
 export default function Home() {
+  const [data, setData] = useState<body>({
+    codigo: '0',
+    message: 'Informe o código do erro no campo acima.',
+  });
   const [errorCode, setErrorCode] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  interface body {
+    codigo: string;
+    message: string;
+  }
+
+  async function handleCodeError(codigo: string) {
+    setLoading(true);
+    api
+      .get(`getSingleCode/${codigo}`)
+      .then(res => {
+        if (res.data !== null) {
+          setData(res.data);
+        } else {
+          setData({
+            codigo: '0',
+            message: 'Nenhum código encontrado... :(',
+          });
+        }
+      })
+      .catch(err => {
+        console.log('deu erro na função handleCodeError -> ' + err);
+      })
+      .finally(() => setLoading(false));
+  }
 
   return (
     <View style={style.container}>
@@ -21,26 +53,32 @@ export default function Home() {
         <TextInput
           maxLength={35}
           placeholder="Código do erro"
+          keyboardType='decimal-pad'
           onChangeText={setErrorCode}
           style={style.inputError}
         />
 
-        <TouchableOpacity activeOpacity={0.5} style={style.btnPesquisar}>
-          <Text style={style.txtBtn}>PESQUISAR</Text>
+        <TouchableOpacity
+          onPress={() => handleCodeError(errorCode)}
+          activeOpacity={0.5}
+          style={style.btnPesquisar}>
+          <Text style={style.txtBtn}>
+            {loading ? <ActivityIndicator color={'white'} /> : 'PESQUISAR'}
+          </Text>
         </TouchableOpacity>
 
         <Text
           style={{
-            borderBottomWidth: 1,
-            width: 275,
+            borderBottomWidth: moderateScale(1),
+            width: moderateScale(275),
             borderColor: '#262626',
-            marginBottom: 20,
+            marginBottom: moderateScale(20),
           }}
         />
         <TextInput
           editable={false}
           placeholderTextColor={'white'}
-          placeholder={'Informe o código do erro no campo acima.'}
+          placeholder={data.message}
           style={style.divResult}
         />
       </View>
